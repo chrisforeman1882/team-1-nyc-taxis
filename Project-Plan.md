@@ -24,21 +24,6 @@ Before diving into tickets, the team should align on **what we want to demonstra
 
 ---
 
-## How We Work — Ticket-Based Pick-Up
-
-There are **no fixed roles**. Anyone can pick up any ticket. The workflow is:
-
-1. Look at the board for tickets in **Ready** state (all blockers resolved).
-2. Pick one that interests you or has the fewest remaining blockers.
-3. Write your name on it and move it to **In Progress**.
-4. When done, move it to **Done** — then go back to step 1.
-
-If you finish a ticket and nothing is unblocked yet, grab a **stretch ticket (S-*)** or pair up with someone on an in-progress ticket.
-
-> **Tip:** Early in the project the ingestion chain (I-01 → I-06) is the critical path. If you're free, help unblock it — everything else fans out from Silver.
-
----
-
 ## Phases & Tickets
 
 ### Legend
@@ -49,25 +34,7 @@ If you finish a ticket and nothing is unblocked yet, grab a **stretch ticket (S-
 
 ---
 
-## Phase 0 — Planning (Day 1)
-
-All four team members work together.
-
-| Ticket | Title | Blocked by | Priority |
-|--------|-------|------------|----------|
-| **P-01** | Agree scope, dataset subset & business questions | — | 🔴 |
-| **P-02** | Set up shared Databricks workspace, catalog & schema | — | 🔴 |
-| **P-03** | Download & upload dataset to DBFS / Unity Catalog volume | P-02 | 🔴 |
-| **P-04** | Create repo structure & blank notebook scaffolding | P-02 | 🔴 |
-| **P-05** | Draft data dictionary (expected columns, types, known quirks) | P-03 | 🔴 |
-| **P-06** | Define ML target variable & initial feature list | P-01 | 🔴 |
-| **P-07** | Identify RAG corpus sources (NYC TLC rules, FAQ, trip metadata docs) | P-01 | 🔴 |
-
-### Day 1 Milestone: ✅ Plan agreed, workspace ready, raw data uploaded, everyone knows the backlog.
-
----
-
-## Phase 1 — Ingestion & Data Foundation (Day 2)
+## Phase 1 — Ingestion & Data Foundation (Day 1)
 
 | Ticket | Title | Blocked by | Priority |
 |--------|-------|------------|----------|
@@ -102,7 +69,7 @@ P-06 ──► ML-01                   (independent of ingestion)
 
 ---
 
-## Phase 2 — Modelling, Analytics & ML Prep (Day 3)
+## Phase 2 — Modelling, Analytics & ML Prep (Day 2)
 
 | Ticket | Title | Blocked by | Priority |
 |--------|-------|------------|----------|
@@ -141,7 +108,7 @@ R-02 ──► R-03 ──► R-04       (independent of analytics/ML)
 
 ---
 
-## Phase 3 — RAG, Integration & Polish (Day 4)
+## Phase 3 — RAG, Integration & Polish (Day 3)
 
 | Ticket | Title | Blocked by | Priority |
 |--------|-------|------------|----------|
@@ -172,7 +139,7 @@ I-06 + A-02 ──► INT-01 ──► INT-02
 
 ---
 
-## Phase 4 — Demo Assembly & Presentation (Day 5)
+## Phase 4 — Demo Assembly & Presentation (Day 4)
 
 | Ticket | Title | Blocked by | Priority |
 |--------|-------|------------|----------|
