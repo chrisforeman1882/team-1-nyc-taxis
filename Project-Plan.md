@@ -38,7 +38,7 @@ Before diving into tickets, the team should align on **what we want to demonstra
 
 | Ticket | Title | Blocked by | Priority |
 |--------|-------|------------|----------|
-| **I-01** | Ingest raw CSV/Parquet into **Bronze** Delta table (append-only, no transforms) | P-03 | 🔴 |
+| **I-01** | Ingest raw CSV/Parquet into **Bronze** Delta table (append-only, no transforms) | - | 🔴 |
 | **I-02** | Explore & profile Bronze data (row counts, nulls, outliers, value distributions) | I-01 | 🔴 |
 | **I-03** | Build **Silver** table — clean column names, cast types, drop corrupt rows | I-02 | 🔴 |
 | **I-04** | Handle missing values & outlier trips (e.g. $0 fares, 0-distance, negative amounts) | I-03 | 🔴 |
@@ -50,19 +50,19 @@ Before diving into tickets, the team should align on **what we want to demonstra
 
 | Ticket | Title | Blocked by | Priority |
 |--------|-------|------------|----------|
-| **R-01** | Collect & prepare RAG corpus documents (TLC rules, taxi FAQs, pricing policy) | P-07 | 🔴 |
+| **R-01** | Collect & prepare RAG corpus documents (TLC rules, taxi FAQs, pricing policy) | - | 🔴 |
 | **R-02** | Chunk documents into retrieval-friendly segments | R-01 | 🔴 |
-| **ML-01** | Research & select ML algorithm candidates (LinearRegression, GBT, RF) | P-06 | 🔴 |
+| **ML-01** | Research & select ML algorithm candidates (LinearRegression, GBT, RF) | - | 🔴 |
 
 ### Dependency Map — Phase 1
 
 ```
-P-03 ──► I-01 ──► I-02 ──► I-03 ──┬──► I-04 ──► I-06 ──► I-07
+I-01 ──► I-02 ──► I-03 ──┬──► I-04 ──► I-06 ──► I-07
                                     │
                                     └──► I-05 (can run ‖ with I-04)
 
-P-07 ──► R-01 ──► R-02          (independent of ingestion)
-P-06 ──► ML-01                   (independent of ingestion)
+R-01 ──► R-02          (independent of ingestion)
+ML-01                   (independent of ingestion)
 ```
 
 ### Day 2 Milestone: ✅ Bronze & Silver Delta tables exist. Silver is clean & documented. RAG corpus drafted.
@@ -172,17 +172,12 @@ I-06 + A-02 ──► INT-01 ──► INT-02
 ## Full Dependency Graph (Simplified)
 
 ```
-DAY 1 (Planning)
-  P-01 ──┬──► P-06 (ML target)
-         └──► P-07 (RAG corpus plan)
-  P-02 ──┬──► P-03 (upload data) ──► P-05 (data dictionary)
-         └──► P-04 (repo scaffold)
 
 DAY 2 (Ingestion)
-  P-03 ──► I-01 ──► I-02 ──► I-03 ──► I-04 ──► I-06 ──► I-07
+  I-01 ──► I-02 ──► I-03 ──► I-04 ──► I-06 ──► I-07
                                    └──► I-05 ─────────────────────┐
-  P-07 ──► R-01 ──► R-02                                         │
-  P-06 ──► ML-01                                                  │
+  R-01 ──► R-02                                         │
+  ML-01                                                  │
                                                                   │
 DAY 3 (Analytics + ML + RAG vectors)                              │
   I-05 ──► A-01 ──► A-02 ──► A-03 + A-04 ──► A-05 ──► A-06      │
