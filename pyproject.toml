@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=67.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nyc-taxis-src"
+version = "0.1.0"
+description = "Shared transforms and validators for the NYC Yellow Taxi Lakehouse pipeline"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

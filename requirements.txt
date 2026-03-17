@@ -1,0 +1,17 @@
+# Dev tooling
+pre-commit
+pre-commit-hooks==6.0.0
+ruff==0.15.5
+detect-secrets==1.5.0
+
+# Testing
+pytest
+
+# Data processing (pin to match DBR 17.3 if using Databricks Connect)
+databricks-connect==17.3.*
+pyspark==3.5.*
+
+# ML & analytics
+scikit-learn
+pandas
+matplotlib

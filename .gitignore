@@ -1,0 +1,81 @@
+venv
+.idea
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django / Flask / misc
+*.log
+local_settings.py
+db.sqlite3
+instance/
+.scrapy
+docs/_build/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv / pipenv / poetry / pdm
+.python-version
+# Pipfile.lock
+# uv.lock
+# poetry.lock
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+
+# Data files — large CSVs should not be committed
+data/*.csv
+data/*.parquet
+archive/
+
+# Databricks CLI
+.databricks/
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/settings.json
+.idea/

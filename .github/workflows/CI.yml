@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed for gitleaks full history scan
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dev tooling
+        run: pip install ruff detect-secrets pytest pre-commit-hooks pyspark
+
+      - name: Run Ruff linter
+        run: ruff check .
+
+      - name: Run Ruff format check
+        run: ruff format --check .
+
+      - name: Run detect-secrets
+        run: detect-secrets-hook --baseline .secrets.baseline
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Snyk vulnerability scan
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=requirements.txt --skip-unresolved
+
+      - name: Run tests
+        run: pytest tests/ -v
