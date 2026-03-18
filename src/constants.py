@@ -1,10 +1,12 @@
 """Project-wide constants for the NYC Yellow Taxi pipeline."""
 
-# Unity Catalog table paths
-CATALOG_SCHEMA = "students_data.`matthew-dobson-schema`"
-BRONZE_TABLE = f"{CATALOG_SCHEMA}.nyc_yellow_taxi"
-SILVER_TABLE = f"{CATALOG_SCHEMA}.nyc_yellow_taxi_silver"
-GOLD_TABLE = f"{CATALOG_SCHEMA}.nyc_yellow_taxi_gold"
+# ── Source ────────────────────────────────────────────────────────────────────
+SOURCE_TABLE = "data_academy_resources.nyc_taxi.yellow_tripdata"
+
+# ── Unity Catalog table paths ─────────────────────────────────────────────────
+BRONZE_TABLE = "students_data.`chris-foreman`.bronze_yellow_tripdata"
+SILVER_TABLE = "students_data.`chris-foreman`.silver_yellow_tripdata"
+GOLD_TABLE = "students_data.`chris-foreman`.gold_yellow_tripdata"
 
 # Column name mapping: Bronze (raw) -> Silver (standardised snake_case)
 # NOTE: The 2016 CSVs use "RatecodeID" (lowercase c) while 2015 uses "RateCodeID".
@@ -65,13 +67,12 @@ REQUIRED_COLUMNS = [
     "payment_type",
 ]
 
-# Complete list of columns the Silver table must contain.
-# Gold and ML layers should ONLY read from Silver, never Bronze.
+# Silver column coverage by business question (Gold/ML must only read from Silver).
 # BQ-1 (demand by location/time): pickup_zone, hour_of_day, day_of_week
 # BQ-2 (fare drivers):            total_amount, fare_amount, trip_distance, hour_of_day, pickup_zone
 # BQ-3 (fare prediction):         pickup_zone, dropoff_zone, hour_of_day, day_of_week, is_weekend,
 #                                  trip_distance, passenger_count, rate_code_id, total_amount
 # BQ-4 (tip prediction, stretch): tip_amount, payment_type, fare_amount, trip_distance, pickup_zone
-# A-02 (Gold fact table):          pickup_zone, hour_of_day, trip_duration_min, fare_amount, total_amount
+# A-02 (Gold fact table):         pickup_zone, hour_of_day, trip_duration_min, fare_amount, total_amount
 # A-03 (revenue/zone/hour):       pickup_zone, hour_of_day, total_amount
 # A-04 (duration by day):         trip_duration_min, day_of_week
