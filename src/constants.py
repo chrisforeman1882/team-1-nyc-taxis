@@ -104,6 +104,33 @@ MAX_TRIP_DURATION_MIN = 1440  # 24 hours in minutes
 # Finding #12: extra surcharge should be $0.50 (rush hour) or $1.00 (overnight)
 VALID_EXTRA_VALUES = {0.0, 0.5, 1.0}
 
+# ── ML-02 Feature table ─────────────────────────────────────────────────────
+
+# Features selected for fare prediction (BQ-3).
+# Known before/at trip start — EXCLUDES fare_amount, tip_amount, tolls_amount,
+# mta_tax, improvement_surcharge (all components of total_amount → leakage).
+ML_FEATURE_COLUMNS = [
+    "pickup_zone",
+    "dropoff_zone",
+    "hour_of_day",
+    "day_of_week",
+    "is_weekend",
+    "trip_distance",
+    "passenger_count",
+    "rate_code_id",
+]
+
+ML_TARGET_COLUMN = "total_amount"
+
+# Train/test split configuration
+ML_TEST_SIZE = 0.2
+ML_RANDOM_STATE = 42
+
+# Sampling fraction — full Silver (~94M rows) is too large for sklearn
+# in-memory training. 1% ≈ 900K rows gives robust temporal coverage.
+# Risk note: "Use a sampled subset for training; scale up only if time permits."
+ML_SAMPLE_FRACTION = 0.01
+
 # ── A-01 Gold schema constants ───────────────────────────────────────────────
 
 # Spark dayofweek() convention: 1=Sunday, 2=Monday, … 7=Saturday
