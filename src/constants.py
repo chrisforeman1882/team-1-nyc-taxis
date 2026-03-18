@@ -131,6 +131,17 @@ ML_RANDOM_STATE = 42
 # Risk note: "Use a sampled subset for training; scale up only if time permits."
 ML_SAMPLE_FRACTION = 0.01
 
+# ── Side project: Trip Duration Prediction Agent ────────────────────────────
+
+# Target column for the duration model (vs total_amount for the fare model)
+ML_DURATION_TARGET_COLUMN = "trip_duration_min"
+
+# MLflow Unity Catalog model name — adjust schema to match your UC schema
+DURATION_MODEL_NAME = "students_data.chris-foreman.nyc_taxi_trip_duration"
+
+# Databricks Foundation Model API endpoint (same as RAG notebook)
+AGENT_LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+
 # ── A-01 Gold schema constants ───────────────────────────────────────────────
 
 # Spark dayofweek() convention: 1=Sunday, 2=Monday, … 7=Saturday
