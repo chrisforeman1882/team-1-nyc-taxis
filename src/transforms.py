@@ -175,9 +175,7 @@ def drop_invalid_fares(df: DataFrame) -> DataFrame:
     Decision: drop — non-positive fares are structurally invalid;
     negative totals are voided/disputed trips.
     """
-    return df.filter(
-        (F.col("fare_amount") > 0) & (F.col("total_amount") >= 0)
-    )
+    return df.filter((F.col("fare_amount") > 0) & (F.col("total_amount") >= 0))
 
 
 def drop_zero_passenger_trips(df: DataFrame) -> DataFrame:
@@ -219,9 +217,7 @@ def drop_duration_anomalies(df: DataFrame) -> DataFrame:
         - F.col("tpep_pickup_datetime").cast("long")
     ) / 60.0
 
-    return df.filter(
-        (duration_min > 0) & (duration_min <= MAX_TRIP_DURATION_MIN)
-    )
+    return df.filter((duration_min > 0) & (duration_min <= MAX_TRIP_DURATION_MIN))
 
 
 def cap_monetary_outliers(df: DataFrame) -> DataFrame:
@@ -246,8 +242,9 @@ def cap_monetary_outliers(df: DataFrame) -> DataFrame:
     # Cap extreme tips at threshold
     df = df.withColumn(
         "tip_amount",
-        F.when(F.col("tip_amount") > MAX_TIP_AMOUNT, F.lit(float(MAX_TIP_AMOUNT)))
-        .otherwise(F.col("tip_amount")),
+        F.when(
+            F.col("tip_amount") > MAX_TIP_AMOUNT, F.lit(float(MAX_TIP_AMOUNT))
+        ).otherwise(F.col("tip_amount")),
     )
 
     # Clean extra surcharge — NULL out non-standard values
