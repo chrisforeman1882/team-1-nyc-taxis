@@ -1,9 +1,10 @@
-"""Silver transformation helpers for NYC Yellow Taxi data."""
+"""Silver and Gold transformation helpers for NYC Yellow Taxi data."""
 
-from pyspark.sql import DataFrame, functions as F
+from pyspark.sql import DataFrame, SparkSession, functions as F
 
 from src.constants import (
     COLUMN_RENAME_MAP,
+    DAY_NAME_MAP,
     DATETIME_COLUMNS,
     MAX_FARE_AMOUNT,
     MAX_TIP_AMOUNT,
@@ -16,6 +17,7 @@ from src.constants import (
     NYC_LON_MIN,
     NUMERIC_CAST_MAP,
     REQUIRED_COLUMNS,
+    TIME_PERIOD_BINS,
     VALID_EXTRA_VALUES,
     VALID_RATE_CODES,
 )
@@ -294,3 +296,94 @@ def add_derived_columns(df: DataFrame) -> DataFrame:
     )
 
     return df
+
+
+# ── A-01 Gold transforms ────────────────────────────────────────────────────
+
+
+_VALID_ZONE = F.col("pickup_zone").isNotNull() & (F.col("pickup_zone") != "")
+
+
+def build_fact_trips(df: DataFrame) -> DataFrame:
+    """Aggregate Silver trips into the Gold fact table.
+
+    Grain: one row per (pickup_zone, hour_of_day, day_of_week).
+    This grain directly serves:
+      - A-03 (revenue/zone/hour): aggregate across day_of_week
+      - A-04 (avg duration/day):  aggregate across pickup_zone + hour_of_day
+      - A-05 (demand heatmap):    zone × hour pivot
+      - BQ-1 (demand by location/time): directly queryable
+      - BQ-2 (fare drivers): directly queryable
+
+    Decision: exclude NULL and empty pickup_zone rows (~1.6M Silver rows
+    with NULLed GPS from I-03, plus edge-case empty strings from zone
+    binning). These cannot contribute to location-based analytics.
+
+    Decision: pickup_zone only (not dropoff). Dropoff analysis is not
+    required by A-03/A-04/BQ-1/BQ-2. Including it would explode the
+    table to zones² × 24 × 7 rows.
+    """
+    return (
+        df.filter(_VALID_ZONE)
+        .groupBy("pickup_zone", "hour_of_day", "day_of_week", "is_weekend")
+        .agg(
+            F.count("*").alias("trip_count"),
+            F.sum("total_amount").alias("total_revenue"),
+            F.round(F.avg("fare_amount"), 2).alias("avg_fare_amount"),
+            F.round(F.avg("trip_distance"), 2).alias("avg_trip_distance"),
+            F.round(F.avg("trip_duration_min"), 2).alias("avg_trip_duration_min"),
+            F.round(F.avg("tip_amount"), 2).alias("avg_tip_amount"),
+            F.sum("passenger_count").alias("total_passengers"),
+        )
+    )
+
+
+def build_dim_location(df: DataFrame) -> DataFrame:
+    """Build the location dimension from distinct Silver pickup zones.
+
+    Parses the grid-binned zone string ("lat,lon") back into numeric
+    coordinates for geographic plotting in A-05 (demand heatmap).
+
+    Filters out NULL and empty-string zones (edge case from zone binning
+    where both lat/lon are NULL but concat_ws still produces "").
+
+    Returns a DataFrame, not persisted — used as a view (tiny: ~3–5K rows).
+    """
+    return (
+        df.filter(_VALID_ZONE)
+        .select("pickup_zone")
+        .distinct()
+        .withColumn("zone_lat", F.split("pickup_zone", ",")[0].cast("double"))
+        .withColumn("zone_lon", F.split("pickup_zone", ",")[1].cast("double"))
+        .withColumnRenamed("pickup_zone", "zone_id")
+    )
+
+
+def build_dim_time(spark: SparkSession) -> DataFrame:
+    """Build the time dimension: all 168 hour × day-of-week combinations.
+
+    Static reference table with human-readable labels for dashboards.
+    Returns a DataFrame, not persisted — used as a view (168 rows).
+
+    Columns:
+        hour_of_day  (int):     0–23
+        day_of_week  (int):     1–7 (Spark convention: 1=Sunday, 7=Saturday)
+        day_name     (string):  "Sunday", "Monday", …
+        is_weekend   (boolean): True for Saturday/Sunday
+        time_period  (string):  "Night", "Morning", "Afternoon", "Evening"
+    """
+    # Build 168 rows: 24 hours × 7 days
+    rows = []
+    for day_num, day_name in DAY_NAME_MAP.items():
+        for hour in range(24):
+            period = next(
+                name
+                for name, (start, end) in TIME_PERIOD_BINS.items()
+                if start <= hour <= end
+            )
+            rows.append((hour, day_num, day_name, day_num in (1, 7), period))
+
+    return spark.createDataFrame(
+        rows,
+        ["hour_of_day", "day_of_week", "day_name", "is_weekend", "time_period"],
+    )
