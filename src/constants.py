@@ -76,3 +76,24 @@ REQUIRED_COLUMNS = [
 # A-02 (Gold fact table):         pickup_zone, hour_of_day, trip_duration_min, fare_amount, total_amount
 # A-03 (revenue/zone/hour):       pickup_zone, hour_of_day, total_amount
 # A-04 (duration by day):         trip_duration_min, day_of_week
+
+# ── I-04 Outlier thresholds ──────────────────────────────────────────────────
+
+# Finding #8: 914 trips exceed 100 mi (likely GPS errors or inter-city rides)
+MAX_TRIP_DISTANCE = 100
+
+# Finding #4/#8: fare_amount ≤ 0 dropped; 458 fares > $500 dropped
+MAX_FARE_AMOUNT = 500
+
+# Finding #5/#12: total_amount < 0 dropped (voided); 210 totals > $1,000 dropped
+MAX_TOTAL_AMOUNT = 1000
+
+# Finding #12: tips capped at $200 (840 negative → 0, 1,368 > $100 outliers)
+MAX_TIP_AMOUNT = 200
+
+# Finding #11: trips > 24 h dropped (330 rows, max ~381 days).
+# Trips ≤ 24 h retained — includes legitimate airport flat-rate rides.
+MAX_TRIP_DURATION_MIN = 1440  # 24 hours in minutes
+
+# Finding #12: extra surcharge should be $0.50 (rush hour) or $1.00 (overnight)
+VALID_EXTRA_VALUES = {0.0, 0.5, 1.0}
