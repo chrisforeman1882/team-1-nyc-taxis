@@ -254,3 +254,43 @@ def cap_monetary_outliers(df: DataFrame) -> DataFrame:
     )
 
     return df
+
+
+# ── I-05 transforms ─────────────────────────────────────────────────────────
+
+
+def add_derived_columns(df: DataFrame) -> DataFrame:
+    """Add time-based derived columns for downstream analytics and ML.
+
+    These columns are required by Gold (A-01, A-04), ML (ML-02), and
+    business questions BQ-1 (demand by time) and BQ-2 (fare drivers).
+
+    Adds:
+        trip_duration_min (double): trip length in minutes
+        hour_of_day       (int):    pickup hour (0-23)
+        day_of_week        (int):    pickup day (1=Sun … 7=Sat)
+        is_weekend        (boolean): True if Saturday or Sunday
+    """
+    # Trip duration in minutes (same formula used inline by drop_duration_anomalies)
+    df = df.withColumn(
+        "trip_duration_min",
+        (
+            F.col("tpep_dropoff_datetime").cast("long")
+            - F.col("tpep_pickup_datetime").cast("long")
+        )
+        / 60.0,
+    )
+
+    # Hour of pickup (0-23)
+    df = df.withColumn("hour_of_day", F.hour("tpep_pickup_datetime"))
+
+    # Day of week (1=Sunday, 2=Monday, … 7=Saturday)
+    df = df.withColumn("day_of_week", F.dayofweek("tpep_pickup_datetime"))
+
+    # Weekend flag (Sunday=1, Saturday=7)
+    df = df.withColumn(
+        "is_weekend",
+        F.when(F.col("day_of_week").isin(1, 7), True).otherwise(False),
+    )
+
+    return df
