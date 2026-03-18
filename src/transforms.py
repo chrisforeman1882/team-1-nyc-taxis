@@ -5,8 +5,13 @@ from pyspark.sql import DataFrame, functions as F
 from src.constants import (
     COLUMN_RENAME_MAP,
     DATETIME_COLUMNS,
+    NYC_LAT_MAX,
+    NYC_LAT_MIN,
+    NYC_LON_MAX,
+    NYC_LON_MIN,
     NUMERIC_CAST_MAP,
     REQUIRED_COLUMNS,
+    VALID_RATE_CODES,
 )
 
 
@@ -20,6 +25,44 @@ def standardise_column_names(df: DataFrame) -> DataFrame:
         if old_name in df.columns:
             df = df.withColumnRenamed(old_name, new_name)
     return df
+
+
+def recover_rate_code_id(df: DataFrame) -> DataFrame:
+    """Recover RateCodeID from _rescued_data JSON for 2016 rows.
+
+    The 2016 CSVs use 'RatecodeID' (lowercase c) while 2015 uses
+    'RateCodeID', causing a schema mismatch on ingest.  73% of rows
+    have NULL rate_code_id with the real value in _rescued_data JSON.
+
+    Also maps the anomalous code 99 (1,670 rows) to NULL.
+    """
+    if "_rescued_data" not in df.columns:
+        return df
+
+    rescued_rate = F.get_json_object(F.col("_rescued_data"), "$.RatecodeID").cast("int")
+
+    df = df.withColumn(
+        "rate_code_id",
+        F.coalesce(F.col("rate_code_id"), rescued_rate),
+    )
+
+    # Map invalid code 99 -> NULL
+    df = df.withColumn(
+        "rate_code_id",
+        F.when(
+            F.col("rate_code_id").isin(list(VALID_RATE_CODES)),
+            F.col("rate_code_id"),
+        ),
+    )
+
+    # Drop _rescued_data — no longer needed after recovery
+    df = df.drop("_rescued_data")
+    return df
+
+
+def deduplicate(df: DataFrame) -> DataFrame:
+    """Remove exact duplicate rows."""
+    return df.dropDuplicates()
 
 
 def cast_datetime_columns(df: DataFrame) -> DataFrame:
@@ -51,12 +94,37 @@ def drop_corrupt_rows(df: DataFrame) -> DataFrame:
     return df
 
 
+def clean_gps_coordinates(df: DataFrame) -> DataFrame:
+    """NULL-out GPS coordinates that are (0, 0) or outside the NYC bounding box.
+
+    Finding #10: 1.55M pickup rows have (0,0) coords, plus ~15K-62K rows
+    fall outside NYC bbox. These would create junk zone bins.
+    """
+    for lat_col, lon_col in [
+        ("pickup_latitude", "pickup_longitude"),
+        ("dropoff_latitude", "dropoff_longitude"),
+    ]:
+        if lat_col in df.columns and lon_col in df.columns:
+            is_valid = (
+                (F.col(lat_col) != 0.0)
+                & (F.col(lon_col) != 0.0)
+                & (F.col(lat_col).between(NYC_LAT_MIN, NYC_LAT_MAX))
+                & (F.col(lon_col).between(NYC_LON_MIN, NYC_LON_MAX))
+            )
+            df = df.withColumn(lat_col, F.when(is_valid, F.col(lat_col))).withColumn(
+                lon_col, F.when(is_valid, F.col(lon_col))
+            )
+    return df
+
+
 def add_zone_bins(df: DataFrame) -> DataFrame:
     """Add grid-binned pickup/dropoff zone columns from lat/lon.
 
     The dataset uses raw lat/lon (pre-2016 format) rather than TLC taxi
     zone IDs.  We round to a fixed grid so Gold can aggregate 'per zone'
     without needing a shapefile spatial join.
+
+    Rows with NULL lat/lon (from clean_gps_coordinates) get NULL zones.
 
     Adds:
         pickup_zone  (string): "lat_bin,lon_bin" for pickup location

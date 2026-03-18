@@ -7,17 +7,30 @@ SILVER_TABLE = f"{CATALOG_SCHEMA}.nyc_yellow_taxi_silver"
 GOLD_TABLE = f"{CATALOG_SCHEMA}.nyc_yellow_taxi_gold"
 
 # Column name mapping: Bronze (raw) -> Silver (standardised snake_case)
+# NOTE: The 2016 CSVs use "RatecodeID" (lowercase c) while 2015 uses "RateCodeID".
+# Schema mismatch causes 73% of rows to have NULL RateCodeID with the real value
+# rescued into _rescued_data JSON — see recover_rate_code_id() in transforms.py.
 COLUMN_RENAME_MAP = {
     "VendorID": "vendor_id",
     "RateCodeID": "rate_code_id",
-    "store_and_fwd_flag": "store_and_fwd_flag",  # already snake_case, kept for explicitness
 }
+
+# Valid TLC rate codes. Code 99 appears in rescued data (1,670 rows) and is
+# treated as a data entry error -> mapped to NULL in Silver.
+VALID_RATE_CODES = {1, 2, 3, 4, 5, 6}
 
 # Lat/lon grid-binning resolution for zone approximation.
 # The dataset uses raw lat/lon (pre-2016 format) rather than TLC taxi zone IDs.
 # We bin to ~0.01 degree grid cells (~1.1 km) so Gold can aggregate "per zone"
 # without a spatial join to the TLC shapefile.
 LAT_LON_BIN_SIZE = 0.01
+
+# Conservative NYC bounding box (covers all 5 boroughs + nearby airports).
+# Coordinates outside this box are treated as missing/corrupt.
+NYC_LAT_MIN = 40.4
+NYC_LAT_MAX = 40.95
+NYC_LON_MIN = -74.3
+NYC_LON_MAX = -73.7
 
 # Columns that must be cast to timestamp in Silver
 DATETIME_COLUMNS = ["tpep_pickup_datetime", "tpep_dropoff_datetime"]
