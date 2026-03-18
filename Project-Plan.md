@@ -47,6 +47,9 @@ Before diving into tickets, the team should align on **what we want to demonstra
 | **I-04** | Handle missing values & outlier trips (e.g. $0 fares, 0-distance, negative amounts) | I-03 | 🔴 |
 | **I-05** | Add derived columns: `trip_duration_min`, `hour_of_day`, `day_of_week`, `is_weekend` | I-03 | 🔴 |
 | **I-06** | Write data quality checks / assertions on Silver table (non-null key fields, fare > 0) | I-04 | 🔴 |
+
+> **I-06 note:** Validator functions in `src/validators.py`, DQ checks + I-07 assumptions log in `notebooks/02_silver_dq.ipynb`.
+
 | **I-07** | Document assumptions & data quality log in a markdown cell or notebook | I-06 | 🔴 |
 
 **Parallel work while ingestion is in progress:**
