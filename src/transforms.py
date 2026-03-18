@@ -5,14 +5,23 @@ from pyspark.sql import DataFrame, functions as F
 from src.constants import (
     COLUMN_RENAME_MAP,
     DATETIME_COLUMNS,
+    MAX_FARE_AMOUNT,
+    MAX_TIP_AMOUNT,
+    MAX_TOTAL_AMOUNT,
+    MAX_TRIP_DISTANCE,
+    MAX_TRIP_DURATION_MIN,
     NYC_LAT_MAX,
     NYC_LAT_MIN,
     NYC_LON_MAX,
     NYC_LON_MIN,
     NUMERIC_CAST_MAP,
     REQUIRED_COLUMNS,
+    VALID_EXTRA_VALUES,
     VALID_RATE_CODES,
 )
+
+
+# ── I-03 transforms ─────────────────────────────────────────────────────────
 
 
 def standardise_column_names(df: DataFrame) -> DataFrame:
@@ -143,4 +152,105 @@ def add_zone_bins(df: DataFrame) -> DataFrame:
                 f"{prefix}_zone",
                 F.concat_ws(",", lat_bin.cast("string"), lon_bin.cast("string")),
             )
+    return df
+
+
+# ── I-04 transforms ─────────────────────────────────────────────────────────
+
+
+def drop_zero_distance_trips(df: DataFrame) -> DataFrame:
+    """Drop trips with zero distance (Finding #3: 564K rows, 0.60%).
+
+    Zero-distance trips are likely cancellations or meter errors.
+    Decision: drop — these cannot represent valid completed trips.
+    """
+    return df.filter(F.col("trip_distance") > 0)
+
+
+def drop_invalid_fares(df: DataFrame) -> DataFrame:
+    """Drop trips with non-positive fares or negative totals (Findings #4, #5).
+
+    Finding #4: 62K rows with fare_amount <= 0 (0.07%)
+    Finding #5: 34K rows with total_amount < 0 (0.04%, voided/disputed)
+    Decision: drop — non-positive fares are structurally invalid;
+    negative totals are voided/disputed trips.
+    """
+    return df.filter((F.col("fare_amount") > 0) & (F.col("total_amount") >= 0))
+
+
+def drop_zero_passenger_trips(df: DataFrame) -> DataFrame:
+    """Drop trips reporting zero passengers (Finding #6: 16K rows, 0.02%).
+
+    Decision: drop rather than impute to 1. Only 0.02% of data, and
+    passenger_count = 0 is structurally invalid for a completed trip.
+    """
+    return df.filter(F.col("passenger_count") > 0)
+
+
+def drop_extreme_outliers(df: DataFrame) -> DataFrame:
+    """Drop trips with extreme distance, fare, or total values (Findings #8, #12).
+
+    Finding #8:  914 trips > 100 mi, 458 fares > $500
+    Finding #12: 210 totals > $1,000 (max $3.95M)
+    Decision: drop — these are likely data entry errors or GPS glitches.
+    Thresholds defined in constants.py.
+    """
+    return df.filter(
+        (F.col("trip_distance") <= MAX_TRIP_DISTANCE)
+        & (F.col("fare_amount") <= MAX_FARE_AMOUNT)
+        & (F.col("total_amount") <= MAX_TOTAL_AMOUNT)
+    )
+
+
+def drop_duration_anomalies(df: DataFrame) -> DataFrame:
+    """Drop trips with impossible durations (Finding #11).
+
+    Finding #11: 946 negative, 101K zero-second, 330 over 24 hours.
+    Decision: drop negative/zero and > 24 h. Trips <= 24 h are retained
+    because 3 h+ trips may include legitimate JFK/Newark flat-rate rides.
+
+    Note: duration is computed inline for filtering only — the permanent
+    trip_duration_min column is added in I-05.
+    """
+    duration_min = (
+        F.col("tpep_dropoff_datetime").cast("long")
+        - F.col("tpep_pickup_datetime").cast("long")
+    ) / 60.0
+
+    return df.filter((duration_min > 0) & (duration_min <= MAX_TRIP_DURATION_MIN))
+
+
+def cap_monetary_outliers(df: DataFrame) -> DataFrame:
+    """Cap or correct extreme monetary values (Finding #12).
+
+    - Negative tip_amount (840 rows): set to 0 (row otherwise valid).
+    - tip_amount > $200: cap at $200 (likely data entry errors; max was $3.95M).
+    - extra surcharge: NULL out values not in {0, 0.5, 1.0}.
+      The $4.50 value (168K rows) may be a legitimate later surcharge,
+      but other irregular/negative values are data errors.
+
+    Finding #7 (tip > 0 on non-card payments, 1,150 rows) is NOT handled
+    here — those rows are kept as-is; tip-prediction models (BQ-4) should
+    restrict training to payment_type = 1 (credit card) only.
+    """
+    # Negative tips → 0
+    df = df.withColumn(
+        "tip_amount",
+        F.when(F.col("tip_amount") < 0, F.lit(0.0)).otherwise(F.col("tip_amount")),
+    )
+
+    # Cap extreme tips at threshold
+    df = df.withColumn(
+        "tip_amount",
+        F.when(
+            F.col("tip_amount") > MAX_TIP_AMOUNT, F.lit(float(MAX_TIP_AMOUNT))
+        ).otherwise(F.col("tip_amount")),
+    )
+
+    # Clean extra surcharge — NULL out non-standard values
+    df = df.withColumn(
+        "extra",
+        F.when(F.col("extra").isin(list(VALID_EXTRA_VALUES)), F.col("extra")),
+    )
+
     return df
