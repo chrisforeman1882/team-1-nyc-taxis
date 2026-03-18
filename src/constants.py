@@ -119,8 +119,8 @@ DAY_NAME_MAP = {
 
 # Time-of-day period bins for dim_time (human-readable dashboard labels)
 TIME_PERIOD_BINS = {
-    "Night": (0, 5),       # 00:00–05:59
-    "Morning": (6, 11),    # 06:00–11:59
-    "Afternoon": (12, 17), # 12:00–17:59
-    "Evening": (18, 23),   # 18:00–23:59
+    "Night": (0, 5),  # 00:00–05:59
+    "Morning": (6, 11),  # 06:00–11:59
+    "Afternoon": (12, 17),  # 12:00–17:59
+    "Evening": (18, 23),  # 18:00–23:59
 }
