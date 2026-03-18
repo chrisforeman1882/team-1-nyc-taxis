@@ -81,8 +81,8 @@ ML-01                   (independent of ingestion)
 |--------|-------|------------|----------|
 | **A-01** | Design Gold analytical table / star schema (fact_trips + dim_location + dim_time) | I-05 | 🔴 |
 | **A-02** | Build **Gold** fact table with pre-aggregated metrics (avg fare, trip count, avg duration per zone/hour) | A-01 | 🔴 |
-| **A-03** | Compute KPI 1: **Revenue per zone per hour** | A-02 | 🔴 |
-| **A-04** | Compute KPI 2: **Average trip duration by day-of-week** | A-02 | 🔴 |
+| **A-03** | Compute KPI 1: **Revenue per zone per hour** | A-02 | � | `notebooks/03_gold_analytics.ipynb` cell 10. Aggregates `fact_trips` by `pickup_zone × hour_of_day` → total_revenue, trip_count, avg_revenue_per_trip. Also includes hourly revenue summary. Branch: `A-03-04-KPIs`. |
+| **A-04** | Compute KPI 2: **Average trip duration by day-of-week** | A-02 | � | `notebooks/03_gold_analytics.ipynb` cell 12. Weighted avg of `avg_trip_duration_min` by `day_name` via `dim_time` join, weighted by `trip_count` to avoid bias from low-traffic cells. Branch: `A-03-04-KPIs`. |
 | **A-05** | Build initial dashboard — demand heatmap + KPI cards | A-03, A-04 | 🔴 |
 | **A-06** | Add contextual narrative to dashboard ("Why this matters") | A-05 | 🔴 |
 
