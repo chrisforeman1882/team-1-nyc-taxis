@@ -6,7 +6,13 @@ SOURCE_TABLE = "data_academy_resources.nyc_taxi.yellow_tripdata"
 # ── Unity Catalog table paths ─────────────────────────────────────────────────
 BRONZE_TABLE = "students_data.`chris-foreman`.bronze_yellow_tripdata"
 SILVER_TABLE = "students_data.`chris-foreman`.silver_yellow_tripdata"
-GOLD_TABLE = "students_data.`chris-foreman`.gold_yellow_tripdata"
+
+# Gold layer: fact table persisted as Delta, dimension views computed on read.
+# Decision rationale: fact table aggregates 140M Silver rows to ~500K rows —
+# persisting avoids expensive re-aggregation on every dashboard load.
+# Dims are tiny (168 rows, ~3–5K rows) and compute instantly, so views
+# guarantee freshness with no staleness risk.
+GOLD_FACT_TABLE = "students_data.`chris-foreman`.gold_fact_trips"
 
 # Column name mapping: Bronze (raw) -> Silver (standardised snake_case)
 # NOTE: The 2016 CSVs use "RatecodeID" (lowercase c) while 2015 uses "RateCodeID".
@@ -124,3 +130,24 @@ ML_RANDOM_STATE = 42
 # in-memory training. 1% ≈ 900K rows gives robust temporal coverage.
 # Risk note: "Use a sampled subset for training; scale up only if time permits."
 ML_SAMPLE_FRACTION = 0.01
+
+# ── A-01 Gold schema constants ───────────────────────────────────────────────
+
+# Spark dayofweek() convention: 1=Sunday, 2=Monday, … 7=Saturday
+DAY_NAME_MAP = {
+    1: "Sunday",
+    2: "Monday",
+    3: "Tuesday",
+    4: "Wednesday",
+    5: "Thursday",
+    6: "Friday",
+    7: "Saturday",
+}
+
+# Time-of-day period bins for dim_time (human-readable dashboard labels)
+TIME_PERIOD_BINS = {
+    "Night": (0, 5),  # 00:00–05:59
+    "Morning": (6, 11),  # 06:00–11:59
+    "Afternoon": (12, 17),  # 12:00–17:59
+    "Evening": (18, 23),  # 18:00–23:59
+}
