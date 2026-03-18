@@ -90,8 +90,8 @@ ML-01                   (independent of ingestion)
 |--------|-------|------------|----------|
 | **ML-02** | Build ML feature table from Silver (pickup loc, hour, day, distance, passenger count) | I-05 | 🔴 |
 | **ML-03** | Train **baseline model** (e.g. Linear Regression) for fare prediction | ML-02 | 🔴 |
-| **ML-04** | Train **improved model** (e.g. Gradient Boosted Trees) | ML-03 | 🔴 |
-| **ML-05** | Log both models, parameters & metrics (RMSE, MAE, R²) to **MLflow** | ML-03, ML-04 | 🔴 |
+| **ML-04** | Train **improved model** (e.g. Gradient Boosted Trees) | ML-03 | � | `notebooks/04_ml_training.ipynb` cell 12. `HistGradientBoostingRegressor` (max_iter=300, max_depth=8, lr=0.05, min_samples_leaf=50). Logged to MLflow as `ML-04_HistGradientBoosting`. Branch: `ML-04-05-improved-model-mlflow`. |
+| **ML-05** | Log both models, parameters & metrics (RMSE, MAE, R²) to **MLflow** | ML-03, ML-04 | � | `notebooks/04_ml_training.ipynb` cell 14. Side-by-side comparison table (RMSE/MAE/R²). Auto-selects best model by lowest RMSE. Both runs logged with full params, metrics, and serialised model artifacts. Branch: `ML-04-05-improved-model-mlflow`. |
 
 | Ticket | Title | Blocked by | Priority |
 |--------|-------|------------|----------|
