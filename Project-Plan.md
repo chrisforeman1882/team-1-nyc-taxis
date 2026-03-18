@@ -41,6 +41,9 @@ Before diving into tickets, the team should align on **what we want to demonstra
 | **I-01** | Ingest raw CSV/Parquet into **Bronze** Delta table (append-only, no transforms) | - | 🔴 |
 | **I-02** | Explore & profile Bronze data (row counts, nulls, outliers, value distributions) | I-01 | 🔴 |
 | **I-03** | Build **Silver** table — clean column names, cast types, drop corrupt rows | I-02 | 🔴 |
+
+> **I-03 note:** Transform functions in `src/transforms.py`, constants in `src/constants.py`, notebook `notebooks/02_silver_cleaning.ipynb` (I-03 section).
+
 | **I-04** | Handle missing values & outlier trips (e.g. $0 fares, 0-distance, negative amounts) | I-03 | 🔴 |
 | **I-05** | Add derived columns: `trip_duration_min`, `hour_of_day`, `day_of_week`, `is_weekend` | I-03 | 🔴 |
 | **I-06** | Write data quality checks / assertions on Silver table (non-null key fields, fare > 0) | I-04 | 🔴 |
@@ -58,8 +61,8 @@ Before diving into tickets, the team should align on **what we want to demonstra
 
 ```
 I-01 ──► I-02 ──► I-03 ──┬──► I-04 ──► I-06 ──► I-07
-                                    │
-                                    └──► I-05 (can run ‖ with I-04)
+                         │
+                         └──► I-05 (can run ‖ with I-04)
 
 R-01 ──► R-02          (independent of ingestion)
 ML-01                   (independent of ingestion)
@@ -96,10 +99,10 @@ ML-01                   (independent of ingestion)
 
 ```
 I-05 ──┬──► A-01 ──► A-02 ──┬──► A-03 ──┐
-       │                     └──► A-04 ──┼──► A-05 ──► A-06
-       │                                 │
+       │                    └──► A-04 ──┼──► A-05 ──► A-06
+       │                                │
        └──► ML-02 ──► ML-03 ──┬──► ML-04
-                               └──► ML-05 (after both models done)
+                              └──► ML-05 (after both models done)
 
 R-02 ──► R-03 ──► R-04       (independent of analytics/ML)
 ```
