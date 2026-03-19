@@ -87,7 +87,6 @@ jobs:
             "run_name": "INT-01 integration tests (${{ github.event_name }})",
             "tasks": [{
               "task_key": "notebook-task",
-              "existing_cluster_id": "${{ secrets.DATABRICKS_CLUSTER_ID }}",
               "notebook_task": {
                 "notebook_path": "${WORKSPACE_TEMP_DIR}/tests/run_int01_tests"
               }
