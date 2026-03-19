@@ -123,9 +123,7 @@ class TestCheckNoDuplicates:
         check_no_duplicates(df, ["x", "y"])
 
     def test_fail_with_dupes(self, local_spark: SparkSession):
-        df = local_spark.createDataFrame(
-            [(1, "a"), (1, "a"), (2, "b")], ["x", "y"]
-        )
+        df = local_spark.createDataFrame([(1, "a"), (1, "a"), (2, "b")], ["x", "y"])
         with pytest.raises(AssertionError, match="duplicate"):
             check_no_duplicates(df, ["x", "y"])
 

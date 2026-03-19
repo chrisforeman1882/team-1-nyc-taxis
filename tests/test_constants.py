@@ -150,9 +150,7 @@ class TestColumnLists:
 
 
 class TestTablePaths:
-    @pytest.mark.parametrize(
-        "table", [BRONZE_TABLE, SILVER_TABLE, GOLD_FACT_TABLE]
-    )
+    @pytest.mark.parametrize("table", [BRONZE_TABLE, SILVER_TABLE, GOLD_FACT_TABLE])
     def test_table_is_three_part_name(self, table: str):
         """Unity Catalog tables must be catalog.schema.table."""
         parts = table.replace("`", "").split(".")

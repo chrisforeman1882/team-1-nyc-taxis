@@ -7,8 +7,11 @@ detect-secrets==1.5.0
 # Testing
 pytest
 
-# Data processing (pin to match DBR 17.3 if using Databricks Connect)
-databricks-connect==17.3.*
+# Data processing
+# Note: databricks-connect is NOT installed here — it ships a modified pyspark
+# that blocks local SparkSession creation, breaking unit tests.
+# Unit tests use standard pyspark locally; integration tests run on Databricks
+# where the session is provided by the cluster kernel.
 pyspark==3.5.*
 
 # ML & analytics

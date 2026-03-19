@@ -48,9 +48,7 @@ class TestGoldFactSchema:
         assert count > 0, "Gold fact table is empty"
 
     @pytest.mark.parametrize("column", EXPECTED_FACT_COLUMNS)
-    def test_expected_column_exists(
-        self, gold_fact_df: DataFrame, column: str
-    ):
+    def test_expected_column_exists(self, gold_fact_df: DataFrame, column: str):
         assert column in gold_fact_df.columns, (
             f"Column '{column}' missing from Gold fact table. "
             f"Available: {gold_fact_df.columns}"
@@ -64,9 +62,7 @@ class TestGoldFactGrain:
         total = gold_fact_df.count()
         distinct = gold_fact_df.select(FACT_GRAIN_COLUMNS).distinct().count()
         dupes = total - distinct
-        assert dupes == 0, (
-            f"{dupes:,} duplicate grain rows in Gold fact table"
-        )
+        assert dupes == 0, f"{dupes:,} duplicate grain rows in Gold fact table"
 
     def test_no_null_pickup_zone(self, gold_fact_df: DataFrame):
         bad = gold_fact_df.filter(F.col("pickup_zone").isNull()).count()
@@ -97,9 +93,7 @@ class TestGoldFactMetrics:
         assert bad == 0, f"{bad:,} rows with trip_count <= 0"
 
     @pytest.mark.parametrize("column", FACT_METRIC_COLUMNS)
-    def test_metric_non_negative(
-        self, gold_fact_df: DataFrame, column: str
-    ):
+    def test_metric_non_negative(self, gold_fact_df: DataFrame, column: str):
         bad = gold_fact_df.filter(F.col(column) < 0).count()
         assert bad == 0, f"{bad:,} rows with {column} < 0"
 
@@ -134,8 +128,7 @@ class TestDimTime:
     def test_all_day_names_present(self, spark: SparkSession):
         dim_time = build_dim_time(spark)
         actual_names = {
-            row["day_name"]
-            for row in dim_time.select("day_name").distinct().collect()
+            row["day_name"] for row in dim_time.select("day_name").distinct().collect()
         }
         expected_names = set(DAY_NAME_MAP.values())
         assert actual_names == expected_names
@@ -187,24 +180,18 @@ class TestDashboardReadiness:
     def test_heatmap_columns_present(self, gold_fact_df: DataFrame):
         """Demand heatmap needs pickup_zone, hour_of_day, trip_count."""
         for col in ["pickup_zone", "hour_of_day", "trip_count"]:
-            assert col in gold_fact_df.columns, (
-                f"Dashboard heatmap requires '{col}'"
-            )
+            assert col in gold_fact_df.columns, f"Dashboard heatmap requires '{col}'"
 
     def test_revenue_chart_columns_present(self, gold_fact_df: DataFrame):
         """Revenue-by-hour chart needs hour_of_day, total_revenue."""
         for col in ["hour_of_day", "total_revenue"]:
-            assert col in gold_fact_df.columns, (
-                f"Revenue chart requires '{col}'"
-            )
+            assert col in gold_fact_df.columns, f"Revenue chart requires '{col}'"
 
     def test_duration_chart_columns_present(self, gold_fact_df: DataFrame):
         """Duration-by-day chart needs day_of_week, avg_trip_duration_min,
         trip_count (for weighting)."""
         for col in ["day_of_week", "avg_trip_duration_min", "trip_count"]:
-            assert col in gold_fact_df.columns, (
-                f"Duration chart requires '{col}'"
-            )
+            assert col in gold_fact_df.columns, f"Duration chart requires '{col}'"
 
     def test_kpi_cards_computable(self, gold_fact_df: DataFrame):
         """KPI cards require aggregatable trip_count and total_revenue."""
@@ -213,6 +200,4 @@ class TestDashboardReadiness:
             F.sum("total_revenue").alias("total_revenue"),
         ).first()
         assert kpis["total_trips"] is not None and kpis["total_trips"] > 0
-        assert (
-            kpis["total_revenue"] is not None and kpis["total_revenue"] > 0
-        )
+        assert kpis["total_revenue"] is not None and kpis["total_revenue"] > 0

@@ -71,7 +71,7 @@ jobs:
         with:
           databricks-host: ${{ secrets.DATABRICKS_HOST }}
           databricks-token: ${{ secrets.DATABRICKS_TOKEN }}
-          local-notebook-path: tests/run_int01_tests.py
+          local-notebook-path: tests/run_int01_tests.ipynb
           existing-cluster-id: ${{ secrets.DATABRICKS_CLUSTER_ID }}
           git-commit: ${{ github.event.pull_request.head.sha || github.sha }}
           access-control-list-json: >

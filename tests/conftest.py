@@ -16,6 +16,9 @@ Usage (Databricks notebook)::
     pytest.main(["tests/", "-v", "--tb=short", "-p", "no:cacheprovider"])
 """
 
+import os
+import sys
+
 import pytest
 from pyspark.sql import DataFrame, SparkSession
 
@@ -33,9 +36,14 @@ def _get_or_create_spark() -> SparkSession:
     if active is not None:
         return active
 
+    # Ensure PySpark workers use the same Python interpreter as the driver.
+    # Without this, workers default to the system Python, causing a version
+    # mismatch error when the venv Python differs from the system Python.
+    os.environ.setdefault("PYSPARK_PYTHON", sys.executable)
+    os.environ.setdefault("PYSPARK_DRIVER_PYTHON", sys.executable)
+
     return (
-        SparkSession.builder
-        .master("local[1]")
+        SparkSession.builder.master("local[1]")
         .appName("unit-tests")
         .config("spark.sql.shuffle.partitions", "1")
         .config("spark.ui.enabled", "false")

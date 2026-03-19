@@ -65,8 +65,7 @@ class TestSilverStructure:
     @pytest.mark.parametrize("column", EXPECTED_SILVER_COLUMNS)
     def test_expected_column_exists(self, silver_df: DataFrame, column: str):
         assert column in silver_df.columns, (
-            f"Column '{column}' missing from Silver. "
-            f"Available: {silver_df.columns}"
+            f"Column '{column}' missing from Silver. Available: {silver_df.columns}"
         )
 
     def test_rescued_data_dropped(self, silver_df: DataFrame):
@@ -74,9 +73,7 @@ class TestSilverStructure:
         assert "_rescued_data" not in silver_df.columns
 
     @pytest.mark.parametrize("column", REQUIRED_COLUMNS)
-    def test_no_nulls_in_required_columns(
-        self, silver_df: DataFrame, column: str
-    ):
+    def test_no_nulls_in_required_columns(self, silver_df: DataFrame, column: str):
         null_count = silver_df.filter(F.col(column).isNull()).count()
         assert null_count == 0, (
             f"Column '{column}' has {null_count:,} NULLs (expected 0)"
@@ -94,9 +91,7 @@ class TestSilverBusinessRules:
         assert bad == 0, f"{bad:,} rows with trip_distance <= 0"
 
     def test_trip_distance_within_max(self, silver_df: DataFrame):
-        bad = silver_df.filter(
-            F.col("trip_distance") > MAX_TRIP_DISTANCE
-        ).count()
+        bad = silver_df.filter(F.col("trip_distance") > MAX_TRIP_DISTANCE).count()
         assert bad == 0, f"{bad:,} rows with trip_distance > {MAX_TRIP_DISTANCE}"
 
     def test_fare_amount_positive(self, silver_df: DataFrame):
@@ -104,9 +99,7 @@ class TestSilverBusinessRules:
         assert bad == 0, f"{bad:,} rows with fare_amount <= 0"
 
     def test_fare_amount_within_max(self, silver_df: DataFrame):
-        bad = silver_df.filter(
-            F.col("fare_amount") > MAX_FARE_AMOUNT
-        ).count()
+        bad = silver_df.filter(F.col("fare_amount") > MAX_FARE_AMOUNT).count()
         assert bad == 0, f"{bad:,} rows with fare_amount > {MAX_FARE_AMOUNT}"
 
     def test_total_amount_non_negative(self, silver_df: DataFrame):
@@ -114,9 +107,7 @@ class TestSilverBusinessRules:
         assert bad == 0, f"{bad:,} rows with total_amount < 0"
 
     def test_total_amount_within_max(self, silver_df: DataFrame):
-        bad = silver_df.filter(
-            F.col("total_amount") > MAX_TOTAL_AMOUNT
-        ).count()
+        bad = silver_df.filter(F.col("total_amount") > MAX_TOTAL_AMOUNT).count()
         assert bad == 0, f"{bad:,} rows with total_amount > {MAX_TOTAL_AMOUNT}"
 
     def test_passenger_count_positive(self, silver_df: DataFrame):
@@ -128,15 +119,12 @@ class TestSilverBusinessRules:
         assert bad == 0, f"{bad:,} rows with tip_amount < 0"
 
     def test_tip_amount_within_max(self, silver_df: DataFrame):
-        bad = silver_df.filter(
-            F.col("tip_amount") > MAX_TIP_AMOUNT
-        ).count()
+        bad = silver_df.filter(F.col("tip_amount") > MAX_TIP_AMOUNT).count()
         assert bad == 0, f"{bad:,} rows with tip_amount > {MAX_TIP_AMOUNT}"
 
     def test_extra_values_valid_or_null(self, silver_df: DataFrame):
         bad = silver_df.filter(
-            F.col("extra").isNotNull()
-            & ~F.col("extra").isin(list(VALID_EXTRA_VALUES))
+            F.col("extra").isNotNull() & ~F.col("extra").isin(list(VALID_EXTRA_VALUES))
         ).count()
         assert bad == 0, (
             f"{bad:,} rows with extra not in {VALID_EXTRA_VALUES} and not NULL"
@@ -189,19 +177,11 @@ class TestSilverDerivedColumns:
         bad = silver_df.filter(F.col("is_weekend").isNull()).count()
         assert bad == 0, f"{bad:,} NULLs in is_weekend"
 
-    def test_is_weekend_consistent_with_day_of_week(
-        self, silver_df: DataFrame
-    ):
+    def test_is_weekend_consistent_with_day_of_week(self, silver_df: DataFrame):
         """is_weekend=True iff day_of_week in (1=Sun, 7=Sat)."""
         bad = silver_df.filter(
-            (
-                F.col("is_weekend")
-                & ~F.col("day_of_week").isin(1, 7)
-            )
-            | (
-                ~F.col("is_weekend")
-                & F.col("day_of_week").isin(1, 7)
-            )
+            (F.col("is_weekend") & ~F.col("day_of_week").isin(1, 7))
+            | (~F.col("is_weekend") & F.col("day_of_week").isin(1, 7))
         ).count()
         assert bad == 0, (
             f"{bad:,} rows where is_weekend is inconsistent with day_of_week"
@@ -230,7 +210,6 @@ class TestSilverReferentialIntegrity:
 
     def test_vendor_id_valid(self, silver_df: DataFrame):
         bad = silver_df.filter(
-            F.col("vendor_id").isNotNull()
-            & ~F.col("vendor_id").isin([1, 2])
+            F.col("vendor_id").isNotNull() & ~F.col("vendor_id").isin([1, 2])
         ).count()
         assert bad == 0, f"{bad:,} rows with invalid vendor_id"

@@ -11,9 +11,7 @@ from pyspark.sql import DataFrame, functions as F
 class TestBronzeToSilver:
     """Silver must have fewer rows than Bronze (cleaning drops rows)."""
 
-    def test_silver_leq_bronze(
-        self, bronze_df: DataFrame, silver_df: DataFrame
-    ):
+    def test_silver_leq_bronze(self, bronze_df: DataFrame, silver_df: DataFrame):
         bronze_count = bronze_df.count()
         silver_count = silver_df.count()
         assert silver_count <= bronze_count, (
@@ -21,9 +19,7 @@ class TestBronzeToSilver:
             f"cleaning should only remove rows"
         )
 
-    def test_cleaning_removed_rows(
-        self, bronze_df: DataFrame, silver_df: DataFrame
-    ):
+    def test_cleaning_removed_rows(self, bronze_df: DataFrame, silver_df: DataFrame):
         """I-03 + I-04 should drop at least some rows."""
         bronze_count = bronze_df.count()
         silver_count = silver_df.count()
@@ -42,13 +38,10 @@ class TestSilverToGold:
         """SUM(trip_count) in Gold must equal Silver rows with non-empty
         pickup_zone (the Gold aggregation filter)."""
         silver_valid = silver_df.filter(
-            F.col("pickup_zone").isNotNull()
-            & (F.col("pickup_zone") != "")
+            F.col("pickup_zone").isNotNull() & (F.col("pickup_zone") != "")
         ).count()
 
-        gold_trip_sum = gold_fact_df.agg(
-            F.sum("trip_count")
-        ).collect()[0][0]
+        gold_trip_sum = gold_fact_df.agg(F.sum("trip_count")).collect()[0][0]
 
         assert gold_trip_sum == silver_valid, (
             f"Gold SUM(trip_count)={gold_trip_sum:,} != "
@@ -61,8 +54,7 @@ class TestSilverToGold:
         """Fact rows must be <= zones × 24 × 7 (theoretical maximum)."""
         distinct_zones = (
             silver_df.filter(
-                F.col("pickup_zone").isNotNull()
-                & (F.col("pickup_zone") != "")
+                F.col("pickup_zone").isNotNull() & (F.col("pickup_zone") != "")
             )
             .select("pickup_zone")
             .distinct()
@@ -91,23 +83,18 @@ class TestSilverToGold:
 class TestRevenueReconciliation:
     """Total revenue must reconcile between Silver and Gold."""
 
-    def test_total_revenue_matches(
-        self, silver_df: DataFrame, gold_fact_df: DataFrame
-    ):
+    def test_total_revenue_matches(self, silver_df: DataFrame, gold_fact_df: DataFrame):
         """SUM(total_amount) for valid-zone Silver rows must equal
         SUM(total_revenue) in Gold fact table."""
         silver_revenue = (
             silver_df.filter(
-                F.col("pickup_zone").isNotNull()
-                & (F.col("pickup_zone") != "")
+                F.col("pickup_zone").isNotNull() & (F.col("pickup_zone") != "")
             )
             .agg(F.sum("total_amount"))
             .collect()[0][0]
         )
 
-        gold_revenue = (
-            gold_fact_df.agg(F.sum("total_revenue")).collect()[0][0]
-        )
+        gold_revenue = gold_fact_df.agg(F.sum("total_revenue")).collect()[0][0]
 
         # Allow tiny floating-point tolerance (< $1 on ~$2B total)
         diff = abs(silver_revenue - gold_revenue)

@@ -45,7 +45,7 @@ class TestBronzeTableExists:
 
     def test_table_is_not_empty(self, bronze_df: DataFrame):
         count = bronze_df.count()
-        assert count > 0, f"Bronze table is empty (0 rows)"
+        assert count > 0, "Bronze table is empty (0 rows)"
 
 
 class TestBronzeSchema:
@@ -54,8 +54,7 @@ class TestBronzeSchema:
     @pytest.mark.parametrize("column", EXPECTED_RAW_COLUMNS)
     def test_expected_column_exists(self, bronze_df: DataFrame, column: str):
         assert column in bronze_df.columns, (
-            f"Column '{column}' missing from Bronze. "
-            f"Available: {bronze_df.columns}"
+            f"Column '{column}' missing from Bronze. Available: {bronze_df.columns}"
         )
 
     def test_has_rescued_data_column(self, bronze_df: DataFrame):
