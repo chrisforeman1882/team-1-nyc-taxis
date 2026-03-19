@@ -69,36 +69,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install Databricks CLI
-        uses: databricks/setup-cli@main
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      - name: Upload project to Databricks workspace
+      - name: Install dependencies
         run: |
-          ME=$(databricks current-user me --output json | jq -r '.userName')
-          DEST="/Users/${ME}/.ci-temp/${{ github.run_id }}"
-          echo "WORKSPACE_TEMP_DIR=${DEST}" >> "$GITHUB_ENV"
-          databricks workspace import-dir src "${DEST}/src" --overwrite
-          databricks workspace import-dir tests "${DEST}/tests" --overwrite
+          pip install databricks-connect pytest
+          pip install -e .
 
-      - name: Run INT-01 integration tests on Databricks
+      - name: Run INT-01 integration tests
         run: |
-          cat > /tmp/run-config.json <<EOF
-          {
-            "run_name": "INT-01 integration tests (${{ github.event_name }})",
-            "tasks": [{
-              "task_key": "notebook-task",
-              "notebook_task": {
-                "notebook_path": "${WORKSPACE_TEMP_DIR}/tests/run_int01_tests"
-              }
-            }],
-            "access_control_list": [{
-              "group_name": "users",
-              "permission_level": "CAN_VIEW"
-            }]
-          }
-          EOF
-          databricks jobs submit --timeout 25m --json @/tmp/run-config.json
-
-      - name: Clean up workspace temp files
-        if: always()
-        run: databricks workspace delete "$WORKSPACE_TEMP_DIR" --recursive || true
+          pytest tests/test_int01_bronze.py \
+                 tests/test_int01_silver.py \
+                 tests/test_int01_gold.py \
+                 tests/test_int01_pipeline.py \
+                 -v --tb=short

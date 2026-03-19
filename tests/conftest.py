@@ -65,14 +65,15 @@ def local_spark() -> SparkSession:
 
 @pytest.fixture(scope="session")
 def spark() -> SparkSession:
-    """Return the active Databricks SparkSession (INT-01 only)."""
-    session = SparkSession.getActiveSession()
-    if session is None:
-        raise RuntimeError(
-            "No active SparkSession. Run INT-01 tests from a Databricks "
-            "notebook cell using pytest.main()."
-        )
-    return session
+    """Return a Databricks serverless SparkSession (INT-01 only).
+
+    Uses databricks-connect so tests can run directly from the GH Actions
+    runner without uploading files or submitting a notebook job.
+    Requires DATABRICKS_HOST and DATABRICKS_TOKEN env vars.
+    """
+    from databricks.connect import DatabricksSession  # noqa: PLC0415
+
+    return DatabricksSession.builder.serverless().getOrCreate()
 
 
 @pytest.fixture(scope="session")
