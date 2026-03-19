@@ -151,3 +151,27 @@ TIME_PERIOD_BINS = {
     "Afternoon": (12, 17),  # 12:00–17:59
     "Evening": (18, 23),  # 18:00–23:59
 }
+
+# ── TLC data dictionary lookups ──────────────────────────────────────────────
+# Source: https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+# Codes 0 (Flex Fare) and 6 (Voided trip) are not present in the
+# Jan 2015 / Jan–Mar 2016 dataset but are included for completeness.
+
+PAYMENT_TYPE_MAP = {
+    0: "Flex Fare trip",
+    1: "Credit card",
+    2: "Cash",
+    3: "No charge",
+    4: "Dispute",
+    5: "Unknown",
+    6: "Voided trip",
+}
+
+RATE_CODE_MAP = {
+    1: "Standard",
+    2: "JFK",
+    3: "Newark",
+    4: "Nassau/Westchester",
+    5: "Negotiated",
+    6: "Group ride",
+}
