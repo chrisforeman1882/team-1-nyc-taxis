@@ -47,7 +47,7 @@ resources:
         # ── Bronze ──────────────────────────────────────────────
         - task_key: bronze_ingest
           notebook_task:
-            notebook_path: ./notebooks/01_ingest
+            notebook_path: ./notebooks/01_ingest.ipynb
             source: WORKSPACE
           description: "Ingest raw CSV → Bronze Delta table"
 
@@ -56,7 +56,7 @@ resources:
           depends_on:
             - task_key: bronze_ingest
           notebook_task:
-            notebook_path: ./notebooks/02_silver_cleaning
+            notebook_path: ./notebooks/02_silver_cleaning.ipynb
             source: WORKSPACE
           description: "Clean, cast, derive columns → Silver Delta table"
 
@@ -64,7 +64,7 @@ resources:
           depends_on:
             - task_key: silver_cleaning
           notebook_task:
-            notebook_path: ./notebooks/02_silver_dq
+            notebook_path: ./notebooks/02_silver_dq.ipynb
             source: WORKSPACE
           description: "Run data quality checks on Silver table"
 
@@ -73,7 +73,7 @@ resources:
           depends_on:
             - task_key: silver_dq
           notebook_task:
-            notebook_path: ./notebooks/03_gold_analytics
+            notebook_path: ./notebooks/03_gold_analytics.ipynb
             source: WORKSPACE
           description: "Build Gold fact table, dim_time, dim_location"
 
@@ -81,7 +81,7 @@ resources:
           depends_on:
             - task_key: gold_analytics
           notebook_task:
-            notebook_path: ./notebooks/03_gold_dashboard
+            notebook_path: ./notebooks/03_gold_dashboard.ipynb
             source: WORKSPACE
           description: "Materialise dashboard-ready aggregations"
 
