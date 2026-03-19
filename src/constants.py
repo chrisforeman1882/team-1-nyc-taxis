@@ -137,6 +137,37 @@ ML_SAMPLE_FRACTION = 0.01
 # as-is, unlike Spark SQL which requires backticks around `chris-foreman`.
 ML_REGISTERED_MODEL_NAME = "students_data.chris-foreman.nyc_taxi_fare_predictor"
 
+# ── Side project: Trip Duration Prediction Agent ────────────────────────────
+
+# Target column for the duration model (vs total_amount for the fare model)
+ML_DURATION_TARGET_COLUMN = "trip_duration_min"
+
+# Duration cap — P99.5 ≈ 61 min; capping at 60 retains 99.43% of rows and
+# removes long-tail outliers that destroy RMSE (EDA: 07a_duration_eda.ipynb).
+DURATION_CAP_MIN = 60
+
+# MLflow Unity Catalog model name — adjust schema to match your UC schema
+DURATION_MODEL_NAME = "students_data.chris-foreman.nyc_taxi_trip_duration"
+
+# Databricks Foundation Model API endpoint (same as RAG notebook)
+AGENT_LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+
+# Weather history Delta table (populated by 07b_weather_history.ipynb)
+WEATHER_TABLE = "students_data.`chris-foreman`.weather_hourly_history"
+
+# NYC Central Park coordinates — representative point for city-wide weather
+NYC_WEATHER_LAT = 40.7831
+NYC_WEATHER_LON = -73.9712
+
+# US federal holidays within our dataset date range (Jan 2015, Jan–Mar 2016)
+HOLIDAYS = {
+    "2015-01-01",  # New Year's Day
+    "2015-01-19",  # Martin Luther King Jr. Day
+    "2016-01-01",  # New Year's Day
+    "2016-01-18",  # Martin Luther King Jr. Day
+    "2016-02-15",  # Presidents' Day
+}
+
 # ── A-01 Gold schema constants ───────────────────────────────────────────────
 
 # Spark dayofweek() convention: 1=Sunday, 2=Monday, … 7=Saturday
