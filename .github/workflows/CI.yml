@@ -74,7 +74,9 @@ jobs:
         uses: databricks/setup-cli@main
 
       - name: Upload project to Databricks workspace
-        run: databricks workspace import-dir . "$WORKSPACE_TEMP_DIR" --overwrite
+        run: |
+          databricks workspace import-dir src "$WORKSPACE_TEMP_DIR/src" --overwrite
+          databricks workspace import-dir tests "$WORKSPACE_TEMP_DIR/tests" --overwrite
 
       - name: Run INT-01 integration tests on Databricks
         uses: databricks/run-notebook@main
