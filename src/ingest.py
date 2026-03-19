@@ -23,7 +23,7 @@ def add_ingestion_metadata(df: DataFrame) -> DataFrame:
 
 
 def write_bronze(df: DataFrame, target_table: str) -> None:
-    """Write a DataFrame to a Bronze Delta table in append-only mode.
+    """Write a DataFrame to a Bronze Delta table (full overwrite).
 
     Parameters
     ----------
@@ -32,6 +32,6 @@ def write_bronze(df: DataFrame, target_table: str) -> None:
     target_table : str
         Fully qualified Delta table name (catalog.schema.table).
     """
-    df.write.format("delta").mode("append").option("mergeSchema", "true").saveAsTable(
+    df.write.format("delta").mode("overwrite").option("mergeSchema", "true").saveAsTable(
         target_table
     )
