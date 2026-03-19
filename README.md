@@ -17,10 +17,19 @@ team-1-nyc-taxis/
 │   ├── ingest.py           # Bronze ingestion helpers
 │   ├── transforms.py       # Silver cleaning & feature transforms
 │   └── validators.py       # Data quality checks
-├── tests/                  # pytest unit tests
+├── tests/                  # pytest test suite (224 tests total)
+│   ├── conftest.py             # Shared fixtures (local_spark + Databricks)
+│   ├── test_constants.py       # Unit: lookup maps, thresholds, column lists
+│   ├── test_transforms.py      # Unit: all I-03/04/05 + A-01 Gold transforms
+│   ├── test_validators.py      # Unit: pass/fail for every validator function
+│   ├── test_int01_bronze.py    # INT-01: Bronze layer validation
+│   ├── test_int01_silver.py    # INT-01: Silver layer validation (I-03/04/05/06)
+│   ├── test_int01_gold.py      # INT-01: Gold layer + dims + dashboard readiness
+│   ├── test_int01_pipeline.py  # INT-01: Cross-layer reconciliation
+│   └── run_int01_tests.py      # Databricks notebook to run full suite
 ├── .github/workflows/      # GitHub Actions CI pipeline
 ├── .pre-commit-config.yaml # Local pre-commit hooks
-├── .secrets.baseline       # detect-secrets baseline
+├── .secrets.baseline        # detect-secrets baseline
 ├── pyproject.toml          # Build config & pytest settings
 ├── requirements.txt        # Python dependencies
 └── ruff.toml               # Linter / formatter config
@@ -65,15 +74,93 @@ These are excluded from version control by `.gitignore`. Download them from Kagg
 
 ### 4. Run tests
 
+See the [Running Tests](#running-tests) section below for full details.
+
+---
+
+## Running Tests
+
+The test suite has two tiers: **101 unit tests** (local / CI) and **123 integration tests** (Databricks only).
+
+### Unit tests (local / CI / Databricks)
+
+These test `src/` functions using synthetic DataFrames. They run anywhere a SparkSession is available — locally, in CI, or on Databricks.
+
+| Module | Tests | Coverage |
+|--------|-------|----------|
+| `test_constants.py` | 32 | Lookup maps, thresholds, column lists, table paths |
+| `test_transforms.py` | 51 | All I-03, I-04, I-05, and A-01 Gold transform functions |
+| `test_validators.py` | 18 | Pass and fail cases for all 8 validator functions |
+
 ```bash
-pytest tests/ -v
+# Local / CI (creates a local SparkSession automatically)
+pytest tests/test_constants.py tests/test_transforms.py tests/test_validators.py -v
 ```
+
+On Databricks, run from a notebook cell:
+
+```python
+import sys, os, importlib
+sys.dont_write_bytecode = True
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+
+project_root = "/Workspace/Users/<your-user>/team-1-nyc-taxis"
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+os.chdir(project_root)
+
+import src.constants, src.transforms, src.validators
+importlib.reload(src.constants)
+importlib.reload(src.transforms)
+importlib.reload(src.validators)
+
+import pytest
+pytest.main([
+    "tests/test_constants.py",
+    "tests/test_transforms.py",
+    "tests/test_validators.py",
+    "-v", "--tb=short", "-p", "no:cacheprovider",
+    "--import-mode=importlib",
+])
+```
+
+### INT-01 integration tests (Databricks only)
+
+These validate the full Bronze → Silver → Gold → Dashboard pipeline against the **persisted Delta tables**. They require an active Spark session connected to Unity Catalog.
+
+| Module | Tests | Coverage |
+|--------|-------|----------|
+| `test_int01_bronze.py` | 23 | Table exists, raw schema intact, min row count (≥90M) |
+| `test_int01_silver.py` | 56 | I-03 structure, I-04 business rules, I-05 derived columns, I-06 referential integrity |
+| `test_int01_gold.py` | 38 | Fact schema, grain uniqueness, metric validity, dim_time/dim_location, dashboard readiness |
+| `test_int01_pipeline.py` | 6 | Bronze→Silver row reduction, Silver→Gold trip count & revenue reconciliation |
+
+#### Option A: Run via notebook (recommended)
+
+Open `tests/run_int01_tests` in Databricks and click **Run All**. The notebook installs pytest, configures the Spark session, and runs the full suite. It will fail with an `AssertionError` if any test fails.
+
+#### Option B: Run from any notebook cell
+
+Same pattern as unit tests above, but include the `test_int01_*` files in the pytest arguments.
+
+### Databricks-specific notes
+
+> **Why `pytest.main()` instead of `python -m pytest`?**
+> Databricks Spark Connect sessions are tied to the notebook kernel process. Subprocesses (shell commands) cannot access the active session, so tests must run in-process.
+
+> **Why `sys.dont_write_bytecode = True`?**
+> Databricks workspace directories do not support `__pycache__` writes. This flag prevents Python from attempting to create `.pyc` files.
+
+> **Why `--import-mode=importlib`?**
+> Forces pytest to use fresh module imports on each run, avoiding stale cached versions when files are edited between runs.
 
 ---
 
 ## CI Pipeline (GitHub Actions)
 
 The `.github/workflows/CI.yml` pipeline runs on every push and pull request to `main`:
+
+### Job 1: `lint-and-security` (GitHub-hosted runner)
 
 | Step | Tool | Purpose |
 |---|---|---|
@@ -82,7 +169,11 @@ The `.github/workflows/CI.yml` pipeline runs on every push and pull request to `
 | Secrets | `detect-secrets` | Baseline secret scan |
 | Secrets | `gitleaks` | Full history secret scan |
 | Security | `snyk` | Dependency vulnerability scan |
-| Tests | `pytest` | Unit test suite |
+| Tests | `pytest` | Unit test suite (101 tests) |
+
+### Job 2: `integration-tests` (Databricks cluster)
+
+Runs after `lint-and-security` passes. Uses the `databricks/run-notebook` action to execute `tests/run_int01_tests` on a Databricks cluster, validating the full Bronze → Silver → Gold → Dashboard pipeline (123 tests).
 
 ### Required GitHub Secrets
 
@@ -91,6 +182,9 @@ Add these in **Settings → Secrets → Actions** on your repository:
 | Secret | Description |
 |---|---|
 | `SNYK_TOKEN` | API token from [snyk.io](https://snyk.io) |
+| `DATABRICKS_HOST` | Workspace URL, e.g. `https://adb-xxxx.azuredatabricks.net` |
+| `DATABRICKS_TOKEN` | Personal access token for the workspace |
+| `DATABRICKS_CLUSTER_ID` | Cluster ID to run integration tests on |
 
 > `GITHUB_TOKEN` is provided automatically by GitHub Actions — no configuration needed.
 

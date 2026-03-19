@@ -23,7 +23,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dev tooling
-        run: pip install ruff detect-secrets pytest pre-commit-hooks pyspark
+        run: |
+          pip install ruff detect-secrets pytest pre-commit-hooks pyspark
+          pip install -e .
 
       - name: Run Ruff linter
         run: ruff check .
@@ -46,5 +48,37 @@ jobs:
         with:
           args: --severity-threshold=high --file=requirements.txt --skip-unresolved
 
-      - name: Run tests
-        run: pytest tests/ -v
+      - name: Run unit tests
+        run: |
+          pytest tests/test_constants.py \
+                 tests/test_transforms.py \
+                 tests/test_validators.py \
+                 -v
+
+  integration-tests:
+    needs: lint-and-security
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run INT-01 integration tests on Databricks
+        uses: databricks/run-notebook@main
+        with:
+          databricks-host: ${{ secrets.DATABRICKS_HOST }}
+          databricks-token: ${{ secrets.DATABRICKS_TOKEN }}
+          local-notebook-path: tests/run_int01_tests.py
+          existing-cluster-id: ${{ secrets.DATABRICKS_CLUSTER_ID }}
+          git-commit: ${{ github.event.pull_request.head.sha || github.sha }}
+          access-control-list-json: >
+            [
+              {
+                "group_name": "users",
+                "permission_level": "CAN_VIEW"
+              }
+            ]
+          run-name: 'INT-01 integration tests (${{ github.event_name }})'
