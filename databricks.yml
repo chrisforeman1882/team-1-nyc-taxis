@@ -8,6 +8,10 @@
 #   databricks bundle validate -t dev
 #   databricks bundle deploy  -t dev
 #   databricks bundle run     -t dev nyc-taxi-etl
+#
+# Auth: Set DATABRICKS_HOST and DATABRICKS_TOKEN as environment variables.
+# The CLI reads these automatically — do not use variable interpolation
+# for workspace.host (not supported for auth fields).
 
 bundle:
   name: nyc-yellow-taxi-etl
@@ -85,16 +89,12 @@ targets:
   dev:
     mode: development
     default: true
-    workspace:
-      host: ${workspace.host}
     variables:
       catalog: students_data
       schema: chris-foreman
 
   prod:
     mode: production
-    workspace:
-      host: ${workspace.host}
     variables:
       catalog: students_data
       schema: chris-foreman
