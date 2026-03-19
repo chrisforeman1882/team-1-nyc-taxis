@@ -77,8 +77,8 @@ jobs:
           ME=$(databricks current-user me --output json | jq -r '.userName')
           DEST="/Users/${ME}/.ci-temp/${{ github.run_id }}"
           echo "WORKSPACE_TEMP_DIR=${DEST}" >> "$GITHUB_ENV"
-          databricks sync src "${DEST}/src"
-          databricks sync tests "${DEST}/tests"
+          databricks workspace import-dir src "${DEST}/src" --overwrite
+          databricks workspace import-dir tests "${DEST}/tests" --overwrite
 
       - name: Run INT-01 integration tests on Databricks
         run: |
