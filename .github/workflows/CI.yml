@@ -65,7 +65,6 @@ jobs:
     env:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
-      WORKSPACE_TEMP_DIR: /tmp/databricks-github-actions/${{ github.run_id }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -75,8 +74,11 @@ jobs:
 
       - name: Upload project to Databricks workspace
         run: |
-          databricks workspace import-dir src "$WORKSPACE_TEMP_DIR/src" --overwrite
-          databricks workspace import-dir tests "$WORKSPACE_TEMP_DIR/tests" --overwrite
+          ME=$(databricks current-user me --output json | jq -r '.userName')
+          DEST="/Users/${ME}/.ci-temp/${{ github.run_id }}"
+          echo "WORKSPACE_TEMP_DIR=${DEST}" >> "$GITHUB_ENV"
+          databricks workspace import-dir src "${DEST}/src" --overwrite
+          databricks workspace import-dir tests "${DEST}/tests" --overwrite
 
       - name: Run INT-01 integration tests on Databricks
         uses: databricks/run-notebook@main
