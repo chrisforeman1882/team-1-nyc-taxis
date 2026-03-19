@@ -98,7 +98,7 @@ jobs:
             }]
           }
           EOF
-          databricks jobs submit --wait --json @/tmp/run-config.json
+          databricks jobs submit --timeout 25m --json @/tmp/run-config.json
 
       - name: Clean up workspace temp files
         if: always()
