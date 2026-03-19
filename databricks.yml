@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=bundle_config_schema.json
 #
-# Databricks Asset Bundle — NYC Yellow Taxi ETL Pipeline
-# Deploys a multi-task Workflow that runs Bronze → Silver → Gold notebooks
+# Databricks Asset Bundle - NYC Yellow Taxi ETL Pipeline
+# Deploys a multi-task Workflow that runs Bronze > Silver > Gold notebooks
 # in sequence on merge to main.
 #
 # Usage:
@@ -10,7 +10,7 @@
 #   databricks bundle run     -t dev nyc-taxi-etl
 #
 # Auth: Set DATABRICKS_HOST and DATABRICKS_TOKEN as environment variables.
-# The CLI reads these automatically — do not use variable interpolation
+# The CLI reads these automatically - do not use variable interpolation
 # for workspace.host (not supported for auth fields).
 
 bundle:
@@ -23,13 +23,16 @@ variables:
   schema:
     description: Unity Catalog schema for all tables
     default: chris-foreman
+  cluster_id:
+    description: Existing cluster ID for running ETL tasks
+    default: 0304-150131-r8aga20i
 
 resources:
   jobs:
     nyc-taxi-etl:
-      name: "NYC Taxi ETL — ${bundle.target}"
+      name: "NYC Taxi ETL - ${bundle.target}"
       description: >
-        End-to-end ETL pipeline: Bronze ingestion → Silver cleaning & DQ →
+        End-to-end ETL pipeline: Bronze ingestion, Silver cleaning & DQ,
         Gold analytics & dashboard tables.
       tags:
         project: nyc-yellow-taxi
@@ -44,23 +47,26 @@ resources:
           default: ${var.schema}
 
       tasks:
-        # ── Bronze ──────────────────────────────────────────────
+        # -- Bronze ------------------------------------------------
         - task_key: bronze_ingest
+          existing_cluster_id: ${var.cluster_id}
           notebook_task:
             notebook_path: ./notebooks/01_ingest.ipynb
             source: WORKSPACE
-          description: "Ingest raw CSV → Bronze Delta table"
+          description: "Ingest raw CSV into Bronze Delta table"
 
-        # ── Silver ─────────────────────────────────────────────
+        # -- Silver ------------------------------------------------
         - task_key: silver_cleaning
+          existing_cluster_id: ${var.cluster_id}
           depends_on:
             - task_key: bronze_ingest
           notebook_task:
             notebook_path: ./notebooks/02_silver_cleaning.ipynb
             source: WORKSPACE
-          description: "Clean, cast, derive columns → Silver Delta table"
+          description: "Clean, cast, derive columns into Silver Delta table"
 
         - task_key: silver_dq
+          existing_cluster_id: ${var.cluster_id}
           depends_on:
             - task_key: silver_cleaning
           notebook_task:
@@ -68,8 +74,9 @@ resources:
             source: WORKSPACE
           description: "Run data quality checks on Silver table"
 
-        # ── Gold ───────────────────────────────────────────────
+        # -- Gold --------------------------------------------------
         - task_key: gold_analytics
+          existing_cluster_id: ${var.cluster_id}
           depends_on:
             - task_key: silver_dq
           notebook_task:
@@ -78,6 +85,7 @@ resources:
           description: "Build Gold fact table, dim_time, dim_location"
 
         - task_key: gold_dashboard
+          existing_cluster_id: ${var.cluster_id}
           depends_on:
             - task_key: gold_analytics
           notebook_task:
@@ -92,12 +100,14 @@ targets:
     variables:
       catalog: students_data
       schema: chris-foreman
+      cluster_id: 0304-150131-r8aga20i
 
   prod:
     mode: production
     variables:
       catalog: students_data
       schema: chris-foreman
+      cluster_id: 0304-150131-r8aga20i
     permissions:
       - user_name: chris.foreman@kainos.com
         level: CAN_MANAGE
