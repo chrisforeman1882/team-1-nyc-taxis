@@ -131,6 +131,12 @@ ML_RANDOM_STATE = 42
 # Risk note: "Use a sampled subset for training; scale up only if time permits."
 ML_SAMPLE_FRACTION = 0.01
 
+# ── ML-06 Model Registry ────────────────────────────────────────────────────
+# Unity Catalog model name (catalog.schema.model).  Note: the MLflow Python API
+# does NOT use SQL-style backtick quoting — hyphens in identifiers are accepted
+# as-is, unlike Spark SQL which requires backticks around `chris-foreman`.
+ML_REGISTERED_MODEL_NAME = "students_data.chris-foreman.nyc_taxi_fare_predictor"
+
 # ── A-01 Gold schema constants ───────────────────────────────────────────────
 
 # Spark dayofweek() convention: 1=Sunday, 2=Monday, … 7=Saturday
