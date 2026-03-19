@@ -1,0 +1,46 @@
+# Deploy NYC Taxi ETL bundle to dev on merge to main.
+# Validates the bundle and deploys it. The ETL pipeline is NOT run
+# automatically — trigger it manually via the Databricks UI or CLI:
+#   databricks bundle run -t dev nyc-taxi-etl
+
+name: Deploy ETL to Dev
+
+# Only trigger on pushes to main (i.e., merged PRs).
+on:
+  push:
+    branches: [main]
+
+# Prevent concurrent deploys.
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+env:
+  DATABRICKS_HOST:  ${{ secrets.DATABRICKS_HOST }}
+  DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
+jobs:
+  validate:
+    name: Validate bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Validate bundle config
+        run: databricks bundle validate -t dev
+
+  deploy:
+    name: Deploy bundle to dev
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Deploy bundle
+        run: databricks bundle deploy -t dev

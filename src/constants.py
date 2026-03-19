@@ -131,6 +131,12 @@ ML_RANDOM_STATE = 42
 # Risk note: "Use a sampled subset for training; scale up only if time permits."
 ML_SAMPLE_FRACTION = 0.01
 
+# ── ML-06 Model Registry ────────────────────────────────────────────────────
+# Unity Catalog model name (catalog.schema.model).  Note: the MLflow Python API
+# does NOT use SQL-style backtick quoting — hyphens in identifiers are accepted
+# as-is, unlike Spark SQL which requires backticks around `chris-foreman`.
+ML_REGISTERED_MODEL_NAME = "students_data.chris-foreman.nyc_taxi_fare_predictor"
+
 # ── Side project: Trip Duration Prediction Agent ────────────────────────────
 
 # Target column for the duration model (vs total_amount for the fare model)
@@ -181,4 +187,28 @@ TIME_PERIOD_BINS = {
     "Morning": (6, 11),  # 06:00–11:59
     "Afternoon": (12, 17),  # 12:00–17:59
     "Evening": (18, 23),  # 18:00–23:59
+}
+
+# ── TLC data dictionary lookups ──────────────────────────────────────────────
+# Source: https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+# Codes 0 (Flex Fare) and 6 (Voided trip) are not present in the
+# Jan 2015 / Jan–Mar 2016 dataset but are included for completeness.
+
+PAYMENT_TYPE_MAP = {
+    0: "Flex Fare trip",
+    1: "Credit card",
+    2: "Cash",
+    3: "No charge",
+    4: "Dispute",
+    5: "Unknown",
+    6: "Voided trip",
+}
+
+RATE_CODE_MAP = {
+    1: "Standard",
+    2: "JFK",
+    3: "Newark",
+    4: "Nassau/Westchester",
+    5: "Negotiated",
+    6: "Group ride",
 }

@@ -301,9 +301,6 @@ def add_derived_columns(df: DataFrame) -> DataFrame:
 # ── A-01 Gold transforms ────────────────────────────────────────────────────
 
 
-_VALID_ZONE = F.col("pickup_zone").isNotNull() & (F.col("pickup_zone") != "")
-
-
 def build_fact_trips(df: DataFrame) -> DataFrame:
     """Aggregate Silver trips into the Gold fact table.
 
@@ -323,8 +320,9 @@ def build_fact_trips(df: DataFrame) -> DataFrame:
     required by A-03/A-04/BQ-1/BQ-2. Including it would explode the
     table to zones² × 24 × 7 rows.
     """
+    valid_zone = F.col("pickup_zone").isNotNull() & (F.col("pickup_zone") != "")
     return (
-        df.filter(_VALID_ZONE)
+        df.filter(valid_zone)
         .groupBy("pickup_zone", "hour_of_day", "day_of_week", "is_weekend")
         .agg(
             F.count("*").alias("trip_count"),
@@ -349,8 +347,9 @@ def build_dim_location(df: DataFrame) -> DataFrame:
 
     Returns a DataFrame, not persisted — used as a view (tiny: ~3–5K rows).
     """
+    valid_zone = F.col("pickup_zone").isNotNull() & (F.col("pickup_zone") != "")
     return (
-        df.filter(_VALID_ZONE)
+        df.filter(valid_zone)
         .select("pickup_zone")
         .distinct()
         .withColumn("zone_lat", F.split("pickup_zone", ",")[0].cast("double"))
