@@ -137,6 +137,12 @@ ML_SAMPLE_FRACTION = 0.01
 # as-is, unlike Spark SQL which requires backticks around `chris-foreman`.
 ML_REGISTERED_MODEL_NAME = "students_data.chris-foreman.nyc_taxi_fare_predictor"
 
+
+# ── D-02 Prediction output ──────────────────────────────────────────────────
+# Persisted test-set predictions (actual vs predicted) from the best model.
+# Written by 04_ml_training after ML-05; consumed by 03_gold_dashboard for the
+# predicted-vs-actual scatter plot.
+ML_PREDICTIONS_TABLE = "students_data.`chris-foreman`.ml_fare_predictions"
 # ── Side project: Trip Duration Prediction Agent ────────────────────────────
 
 # Target column for the duration model (vs total_amount for the fare model)
