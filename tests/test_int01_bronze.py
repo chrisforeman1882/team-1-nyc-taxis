@@ -68,9 +68,9 @@ class TestBronzeRowCount:
     """Bronze row count should be reasonable for the NYC taxi dataset."""
 
     def test_minimum_row_count(self, bronze_df: DataFrame):
-        """Dataset contains Jan 2015 + Jan–Mar 2016 (~94–141M rows)."""
+        """Dataset contains Jan 2015 + Jan–Mar 2016 (~47M rows)."""
         count = bronze_df.count()
-        assert count >= 90_000_000, (
-            f"Bronze has only {count:,} rows; expected >= 90M "
+        assert count >= 40_000_000, (
+            f"Bronze has only {count:,} rows; expected >= 40M "
             f"for the NYC Yellow Taxi dataset"
         )
