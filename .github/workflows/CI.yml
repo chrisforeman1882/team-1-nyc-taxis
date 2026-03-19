@@ -62,16 +62,26 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      WORKSPACE_TEMP_DIR: /tmp/databricks-github-actions/${{ github.run_id }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Upload project to Databricks workspace
+        run: databricks workspace import-dir . "$WORKSPACE_TEMP_DIR" --overwrite
 
       - name: Run INT-01 integration tests on Databricks
         uses: databricks/run-notebook@main
         with:
           databricks-host: ${{ secrets.DATABRICKS_HOST }}
           databricks-token: ${{ secrets.DATABRICKS_TOKEN }}
-          local-notebook-path: tests/run_int01_tests.ipynb
+          workspace-notebook-path: ${{ env.WORKSPACE_TEMP_DIR }}/tests/run_int01_tests
           existing-cluster-id: ${{ secrets.DATABRICKS_CLUSTER_ID }}
           git-commit: ${{ github.event.pull_request.head.sha || github.sha }}
           access-control-list-json: >
@@ -82,3 +92,7 @@ jobs:
               }
             ]
           run-name: 'INT-01 integration tests (${{ github.event_name }})'
+
+      - name: Clean up workspace temp files
+        if: always()
+        run: databricks workspace delete "$WORKSPACE_TEMP_DIR" --recursive || true
