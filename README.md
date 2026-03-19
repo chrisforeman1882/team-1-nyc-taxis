@@ -27,7 +27,10 @@ team-1-nyc-taxis/
 │   ├── test_int01_gold.py      # INT-01: Gold layer + dims + dashboard readiness
 │   ├── test_int01_pipeline.py  # INT-01: Cross-layer reconciliation
 │   └── run_int01_tests.py      # Databricks notebook to run full suite
-├── .github/workflows/      # GitHub Actions CI pipeline
+├── .github/workflows/      # GitHub Actions CI & deployment
+│   ├── CI.yml              # Lint, security, unit & integration tests
+│   └── deploy.yml          # Deploy ETL bundle to dev on merge
+├── databricks.yml          # Databricks Asset Bundle config (ETL pipeline)
 ├── .pre-commit-config.yaml # Local pre-commit hooks
 ├── .secrets.baseline        # detect-secrets baseline
 ├── pyproject.toml          # Build config & pytest settings
@@ -189,6 +192,49 @@ Add these in **Settings → Secrets → Actions** on your repository:
 > `GITHUB_TOKEN` is provided automatically by GitHub Actions — no configuration needed.
 
 ---
+
+## ETL Pipeline (Databricks Asset Bundles)
+
+The ETL pipeline is defined as a **Databricks Asset Bundle** in `databricks.yml`. It creates a multi-task Databricks Workflow that runs the notebooks in sequence:
+
+```
+bronze_ingest → silver_cleaning → silver_dq → gold_analytics → gold_dashboard
+```
+
+| Task | Notebook | Layer |
+|---|---|---|
+| `bronze_ingest` | `01_ingest` | Raw CSV → Bronze Delta |
+| `silver_cleaning` | `02_silver_cleaning` | Clean, cast, derive → Silver Delta |
+| `silver_dq` | `02_silver_dq` | Data quality checks |
+| `gold_analytics` | `03_gold_analytics` | Fact table, dim_time, dim_location |
+| `gold_dashboard` | `03_gold_dashboard` | Dashboard aggregations |
+
+### Automatic deployment
+
+The `.github/workflows/deploy.yml` workflow triggers on every merge to `main`:
+
+1. **Validate** — `databricks bundle validate -t dev`
+2. **Deploy** — `databricks bundle deploy -t dev` (syncs notebooks + creates/updates the Workflow)
+3. **Run** — `databricks bundle run -t dev nyc-taxi-etl` (triggers the ETL pipeline)
+
+### Manual deployment (local)
+
+```bash
+# Install Databricks CLI: https://docs.databricks.com/dev-tools/cli/install.html
+databricks bundle validate -t dev
+databricks bundle deploy  -t dev
+databricks bundle run     -t dev nyc-taxi-etl
+```
+
+### Targets
+
+| Target | Mode | Catalog | Schema |
+|---|---|---|---|
+| `dev` (default) | development | `students_data` | `chris-foreman` |
+| `prod` | production | `students_data` | `chris-foreman` |
+
+---
+
 
 ## Five-Day Project Plan
 
