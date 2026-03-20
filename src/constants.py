@@ -126,10 +126,10 @@ ML_TARGET_COLUMN = "total_amount"
 ML_TEST_SIZE = 0.2
 ML_RANDOM_STATE = 42
 
-# Sampling fraction — full Silver (~94M rows) is too large for sklearn
-# in-memory training. 1% ≈ 900K rows gives robust temporal coverage.
+# Sampling fraction — full Silver (~47M rows) is too large for sklearn
+# in-memory training. 5% ≈ 2.3M rows gives robust temporal coverage.
 # Risk note: "Use a sampled subset for training; scale up only if time permits."
-ML_SAMPLE_FRACTION = 0.01
+ML_SAMPLE_FRACTION = 0.05
 
 # ── ML-06 Model Registry ────────────────────────────────────────────────────
 # Unity Catalog model name (catalog.schema.model).  Note: the MLflow Python API
