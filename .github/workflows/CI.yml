@@ -62,23 +62,27 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Run INT-01 integration tests on Databricks
-        uses: databricks/run-notebook@main
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          databricks-host: ${{ secrets.DATABRICKS_HOST }}
-          databricks-token: ${{ secrets.DATABRICKS_TOKEN }}
-          local-notebook-path: tests/run_int01_tests.ipynb
-          existing-cluster-id: ${{ secrets.DATABRICKS_CLUSTER_ID }}
-          git-commit: ${{ github.event.pull_request.head.sha || github.sha }}
-          access-control-list-json: >
-            [
-              {
-                "group_name": "users",
-                "permission_level": "CAN_VIEW"
-              }
-            ]
-          run-name: 'INT-01 integration tests (${{ github.event_name }})'
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install databricks-connect pytest
+          pip install -e .
+
+      - name: Run INT-01 integration tests
+        run: |
+          pytest tests/test_int01_bronze.py \
+                 tests/test_int01_silver.py \
+                 tests/test_int01_gold.py \
+                 tests/test_int01_pipeline.py \
+                 -v --tb=short

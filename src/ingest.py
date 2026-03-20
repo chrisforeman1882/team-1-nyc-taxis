@@ -22,8 +22,8 @@ def add_ingestion_metadata(df: DataFrame) -> DataFrame:
     return df.withColumn("_ingested_at", F.current_timestamp())
 
 
-def write_bronze(df: DataFrame, target_table: str) -> None:
-    """Write a DataFrame to a Bronze Delta table (full overwrite).
+def write_bronze(df: DataFrame, target_table: str, mode: str = "overwrite") -> None:
+    """Write a DataFrame to a Bronze Delta table.
 
     Parameters
     ----------
@@ -31,7 +31,10 @@ def write_bronze(df: DataFrame, target_table: str) -> None:
         DataFrame to write (should already include ingestion metadata).
     target_table : str
         Fully qualified Delta table name (catalog.schema.table).
+    mode : str
+        Write mode passed to Delta (default ``"overwrite"``). Use
+        ``"append"`` for incremental loads.
     """
-    df.write.format("delta").mode("overwrite").option(
-        "mergeSchema", "true"
-    ).saveAsTable(target_table)
+    df.write.format("delta").mode(mode).option("overwriteSchema", "true").saveAsTable(
+        target_table
+    )
